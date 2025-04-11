@@ -1,87 +1,84 @@
 #include "raylib.h"
-#include <stdlib.h>  // for rand()
+#include <stdlib.h>
 
-#define MAX_PARTICLES 1000000
-
-typedef struct Particle {
-    Vector2 position;
-    Vector2 velocity;
-    float lifetime;
+typedef struct Particle
+{
+    Vector2 pos;
+    Vector2 vel;
     Color color;
-    bool active;
+    float lifetime;
+    bool alive;
 } Particle;
+
+#define MAX_PARTICLES 10000
 
 Particle particles[MAX_PARTICLES];
 
-// Initialize a particle at a given position
-void spawn_particle(Vector2 pos)
+#define TARGET_FPS 120.0f
+
+void create_new_particle(Vector2 pos)
 {
     for (int i = 0; i < MAX_PARTICLES; i++)
     {
-        if (!particles[i].active)
+        if (!particles[i].alive)
         {
-            particles[i].position = pos;
-            // x velocity is any value with 1 decimal place between -5 and 5 (e.g. -3.8)
-            // y velocity is any value with 1 decimal place between -5 and 0 (e.g. -2.0)
-            particles[i].velocity = (Vector2){ (float)(rand() % 100 - 50) / 10.0f, (float)(-rand() % 50) / 10.0f };
-            particles[i].lifetime = 1.0f + (rand() % 100) / 100.0f;
+            particles[i].pos = pos;
+            float x_vel = (float)GetRandomValue(-50, 50) * 10.0f / TARGET_FPS;
+            float y_vel = (float)GetRandomValue(-50, 0) * 10.0f / TARGET_FPS;
+            particles[i].vel = (Vector2){ .x = x_vel, .y = y_vel };
             particles[i].color = RAYWHITE;
-            particles[i].active = true;
+            particles[i].lifetime = GetRandomValue(3, 15) / 10.0f;
+            particles[i].alive = true;
             break;
         }
     }
 }
 
-void update_particles(float dt)
+void move_all_particles(float dt)
 {
     for (int i = 0; i < MAX_PARTICLES; i++)
     {
-        if (particles[i].active)
+        if (particles[i].alive)
         {
-            particles[i].position.x += particles[i].velocity.x;
-            particles[i].position.y += particles[i].velocity.y;
-            particles[i].velocity.y += 0.05;
-            particles[i].lifetime -= dt;
+            particles[i].pos.x += particles[i].vel.x;
+            particles[i].pos.y += particles[i].vel.y;
+            particles[i].vel.y += 10.0f / TARGET_FPS;
 
+            particles[i].lifetime -= dt;
             if (particles[i].lifetime <= 0)
             {
-                particles[i].active = false;
+                particles[i].alive = false;
             }
         }
     }
 }
 
-void draw_particles() {
-    for (int i = 0; i < MAX_PARTICLES; i++)
+int main()
+{
+    InitWindow(800, 600, "My Particle System");
+    SetTargetFPS(TARGET_FPS);
+
+    while (!WindowShouldClose())
     {
-        if (particles[i].active)
-        {
-            DrawCircleV(particles[i].position, 3.0f, particles[i].color);
-        }
-    }
-}
-
-int main() {
-    InitWindow(800, 600, "Particle System Starter");
-    SetTargetFPS(60);
-
-    while (!WindowShouldClose()) {
         float dt = GetFrameTime();
-
-        if (IsMouseButtonDown(MOUSE_LEFT_BUTTON)) {
-            for (int i = 0; i < 5; i++) {
-                spawn_particle(GetMousePosition());
-            }
+        if (IsMouseButtonDown(MOUSE_BUTTON_LEFT))
+        {
+            create_new_particle(GetMousePosition());
         }
 
-        update_particles(dt);
+        move_all_particles(dt);
 
         BeginDrawing();
         ClearBackground(BLACK);
-        draw_particles();
+        for (int i = 0; i < MAX_PARTICLES; i++)
+        {
+            if (particles[i].alive)
+            {
+                DrawCircleV(particles[i].pos, 3, particles[i].color);
+            }
+        }
         EndDrawing();
     }
 
-    CloseWindow();
     return 0;
 }

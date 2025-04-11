@@ -1,5 +1,5 @@
-# Space Shooter
+# Particle Simulator
 
-This is the space shooter game for SIG C.
+This is a particle simulator for SIG C.
 
 Credits to [Luca Sas](https://github.com/SasLuca) for making the template.
