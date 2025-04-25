@@ -56,11 +56,26 @@ void move_all_particles(float dt)
 int main()
 {
     InitWindow(800, 600, "My Particle System");
+    Shader bg_shader = LoadShader(0, ASSETS_PATH"bg.glsl");
+    int bg_res_loc = GetShaderLocation(bg_shader, "uResolution");
+    int bg_time_loc = GetShaderLocation(bg_shader, "uTime");
+    Shader particle_shader = LoadShader(0, ASSETS_PATH"shader.glsl");
+    int res_loc = GetShaderLocation(particle_shader, "uResolution");
     SetTargetFPS(TARGET_FPS);
 
+    float elapsed = 0.0f;
     while (!WindowShouldClose())
     {
         float dt = GetFrameTime();
+        elapsed += dt;
+        SetShaderValue(bg_shader, bg_time_loc, &elapsed, SHADER_UNIFORM_FLOAT);
+
+        Vector2 screen_res = (Vector2){
+            .x = GetScreenWidth(),
+            .y = GetScreenHeight()
+        };
+        SetShaderValue(particle_shader, res_loc, &screen_res, SHADER_UNIFORM_VEC2);
+        SetShaderValue(bg_shader, bg_res_loc, &screen_res, SHADER_UNIFORM_VEC2);
         if (IsMouseButtonDown(MOUSE_BUTTON_LEFT))
         {
             create_new_particle(GetMousePosition());
@@ -69,14 +84,19 @@ int main()
         move_all_particles(dt);
 
         BeginDrawing();
-        ClearBackground(BLACK);
-        for (int i = 0; i < MAX_PARTICLES; i++)
-        {
-            if (particles[i].alive)
-            {
-                DrawCircleV(particles[i].pos, 3, particles[i].color);
-            }
-        }
+            BeginShaderMode(bg_shader);
+                DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), BLACK);
+            EndShaderMode();
+
+            BeginShaderMode(particle_shader);
+                for (int i = 0; i < MAX_PARTICLES; i++)
+                {
+                    if (particles[i].alive)
+                    {
+                        DrawCircleV(particles[i].pos, 3, particles[i].color);
+                    }
+                }
+            EndShaderMode();
         EndDrawing();
     }
 
